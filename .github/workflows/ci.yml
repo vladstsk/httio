@@ -102,18 +102,21 @@ jobs:
               base,
               head
             });
-
-            const files = diff.data.files.map(f => f.filename);
-
-            const pkgs = [...new Set(
-              files
-                .filter(f => f.startsWith('packages/'))
-                .map(f => f.split('/')[1])
-            )];
             
+            const pkgs = new Set();
+            
+            for (const f of diff.data.files) {
+              if (!f.filename.startsWith('packages/') || /^packages\/[^\/]+\/package\.json$/.test(f.filename)) {
+                continue;
+              }
+            
+              pkgs.add(f.filename.split('/')[1]);
+            }
+
             core.setOutput('packages', pkgs.join(' '));
 
       - name: Bump versions per package
+        if: steps.changed.outputs.packages != ''
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
