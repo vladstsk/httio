@@ -5,8 +5,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint",
-    "test": "jest --coverage",
-    "test1": "jest"
+    "test": "jest --coverage"
   },
   "exports": {
     ".": {
