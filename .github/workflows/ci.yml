@@ -159,7 +159,8 @@ jobs:
             git tag "${pkg}@${NEW}"
           done
 
-          git push origin HEAD:${{ github.head_ref }} --follow-tags
+          git push origin HEAD:${{ github.head_ref }}
+          git push origin --tags
         shell: bash
         env:
           CI: true
