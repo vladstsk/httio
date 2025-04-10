@@ -79,26 +79,6 @@ const createUser = async (payload: CreateUserRequest): Promise<User> => {
 };
 ```
 
-## Lazy Evaluation
-
-One of the key features of httio is that responses need explicit parsing, giving you control over when and how to process the response data:
-
-```typescript
-import httio from 'httio';
-
-// Start a request but don't parse the result immediately
-const pendingRequest = httio.post('https://api.example.com/users/create', {
-  name: "John Doe",
-  email: "john@example.com",
-});
-
-// Do some other operations
-await someOtherOperation();
-
-// Now wait for the request to complete and get JSON result
-const result = await pendingRequest.json();
-```
-
 ## Using Middleware
 
 ```typescript

@@ -15,7 +15,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
   "description": "Modern, lightweight HTTP client for JavaScript, with handy tools for working with requests and responses.",
   "keywords": [

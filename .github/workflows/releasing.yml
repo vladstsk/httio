@@ -1,7 +1,10 @@
 name: Releasing
 
 on:
-  create:
+#  pull_request:
+#    branches:
+#      - main
+  push:
     tags:
       - '*@*'
 
