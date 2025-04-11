@@ -1,12 +1,11 @@
 {
   "name": "httio",
-  "version": "0.1.5",
+  "version": "0.6.0",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint",
-    "test": "jest --coverage",
-    "test1": "jest"
+    "test": "jest --coverage"
   },
   "exports": {
     ".": {
@@ -16,7 +15,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
   "description": "Modern, lightweight HTTP client for JavaScript, with handy tools for working with requests and responses.",
   "keywords": [

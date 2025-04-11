@@ -222,5 +222,8 @@ const httio = client({
 - `response.json()` - Parse response as JSON
 - `response.text()` - Parse response as text
 - `response.blob()` - Parse response as Blob
+- `response.bytes()` - Parse response as Uint8Array
 - `response.buffer()` - Parse response as ArrayBuffer
 - `response.stream()` - Parse response as ReadableStream
+
+[//]: # (comment qwe)
