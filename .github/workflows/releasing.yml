@@ -62,7 +62,7 @@ jobs:
             bump="patch"
           fi
 
-          BRANCH="releases/${{ github.event.pull_request.number }}"
+          BRANCH="releases/pr-${{ github.event.pull_request.number }}"
           git checkout -b $BRANCH
 
           for pkg in ${{ steps.changed.outputs.packages }}; do
@@ -77,26 +77,25 @@ jobs:
 
           npm install --package-lock-only
           git add $(printf "packages/%s/package.json " ${{ steps.changed.outputs.packages }}) package-lock.json
-          git commit -m "chore(release): bump versions [skip ci]"
+          git commit -m "chore(release): bump versions for ${{ steps.changed.outputs.packages }} [skip ci]"
 
           git push origin $BRANCH
           git push origin --tags
 
       - name: Create Pull Request
+        if: steps.changed.outputs.packages != ''
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "releases/${{ github.event.pull_request.number }}"
-          title: "Release: bump package versions"
-          base: ${{ github.base_ref }}
+          base: ${{ github.event.pull_request.base.ref }}
+          title: "chore(release): bump versions for ${{ steps.changed.outputs.packages }}"
           body: |
-            This PR bumps versions for updated packages:
+            This PR bumps versions for the following packages:
             ${{ steps.changed.outputs.packages }}
-          commit-message: "chore(release): bump versions"
 
-      - name: Enable auto-merge
-        if: steps.cpr.outputs.pull-request-operation == 'created'
+      - name: Enable auto-merge for Release PR
+        if: steps.cpr.outputs.pull-request-number
         uses: peter-evans/enable-pull-request-automerge@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
