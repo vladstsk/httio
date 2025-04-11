@@ -97,8 +97,7 @@ jobs:
             --title "chore(release): bump versions for ${CHANGED}" \
             --body "This PR bumps versions for the following packages:\n${CHANGED}" \
             --base "${BASE_REF}" \
-            --head "${RELEASE_BRANCH}" \
-            --label "auto-merge"
+            --head "${RELEASE_BRANCH}"
 
           NEW_PR_NUM=$(gh pr view --json number --jq .number --head "${RELEASE_BRANCH}")
           echo "→ Release PR #${NEW_PR_NUM} created"
