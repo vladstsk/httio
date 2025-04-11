@@ -2,8 +2,8 @@ name: Testing
 
 on:
   pull_request:
-    branches:
-      - '!releases/*'
+    branches-ignore:
+      - 'releases/*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
