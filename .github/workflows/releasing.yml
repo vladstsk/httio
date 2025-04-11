@@ -1,82 +1,109 @@
 name: Releasing
 
 on:
-#  pull_request:
-#    branches:
-#      - main
-  push:
-    tags:
-      - '*@*'
-
-#permissions:
-#  contents: write
-#  packages: write
+  pull_request_target:
+    types:
+      - closed
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
+
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
         with:
-          cache: 'npm'
-          node-version: ${{ matrix.node-version }}
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
 
-      - name: Parse tag
-        id: parse
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          result-encoding: string
-          script: |
-            const tag = context.ref.replace('refs/tags/', '');
-            const [pkg, version] = tag.split('@');
-            core.setOutput('package', pkg);
-            core.setOutput('version', version);
-
-      - name: GitHub Release
+      - name: Find changed packages
+        id: changed
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tag = context.ref.replace('refs/tags/', '');
-            const [owner, repo] = [context.repo.owner, context.repo.repo];
-            let rel;
-            try {
-              rel = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
-            } catch {
-              rel = null;
+            const pr = context.payload.pull_request.number;
+            const files = (await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr,
+            })).data;
+            
+            const pkgs = new Set();
+            
+            for (const f of files) {
+              if (f.filename.startsWith('packages/') &&
+                  !f.filename.endsWith('package.json') &&
+                  !f.filename.endsWith('package-lock.json')) {
+                pkgs.add(f.filename.split('/')[1]);
+              }
             }
-            const body = `Release for **${tag}**`;
-            if (rel) {
-              core.info(`Updating release #${rel.data.id}`);
-              await github.rest.repos.updateRelease({
-                owner, repo,
-                release_id: rel.data.id,
-                tag_name: tag,
-                name: tag,
-                body,
-              });
-            } else {
-              core.info(`Creating release for ${tag}`);
-              await github.rest.repos.createRelease({
-                owner, repo,
-                tag_name: tag,
-                name: tag,
-                body,
-                draft: false,
-                prerelease: false,
-              });
-            }
+            
+            core.setOutput('packages', [...pkgs].join(' '));
 
-#      # 4) Публикуем пакет в npm
-#      - name: Publish to npm
-#        uses: JS-DevTools/npm-publish@v3
-#        with:
-#          token: ${{ secrets.NPM_TOKEN }}
-#          package: "packages/${{ steps.parse.outputs.package }}"
-#        env:
-#          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Bump versions in a new branch
+        if: steps.changed.outputs.packages != ''
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+          level=0
+          if [[ ${{ github.event.pull_request.title }} =~ BREAKING[[:space:]]CHANGE ]] || [[ ${{ github.event.pull_request.title }} =~ .*!.* ]]; then
+          level=3
+          elif [[ ${{ github.event.pull_request.title }} =~ ^feat ]]; then
+          level=2
+          elif [[ ${{ github.event.pull_request.title }} =~ ^fix|^perf ]]; then
+          level=1
+          fi
+          
+          case $level in
+          3) bump=major ;;
+          2) bump=minor ;;
+          *) bump=patch ;;
+          esac
+
+          BRANCH="releases/${{ github.event.pull_request.number }}"
+          git checkout -b $BRANCH
+
+          for pkg in ${{ steps.changed.outputs.packages }}; do
+            echo "Processing package: $pkg"
+
+            npm version $bump --prefix "packages/$pkg" --no-git-tag-version
+
+            ver=$(jq -r .version packages/$pkg/package.json)
+            name=$(jq -r .name packages/$pkg/package.json)
+            git tag "${name}@${ver}"
+          done
+
+          npm install --package-lock-only
+          git add $(printf "packages/%s/package.json " ${{ steps.changed.outputs.packages }}) package-lock.json
+          git commit -m "chore(release): bump versions [skip ci]"
+
+          git push origin $BRANCH
+          git push origin --tags
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "releases/${{ github.event.pull_request.number }}"
+          title: "Release: bump package versions"
+          body: |
+            This PR bumps versions for updated packages:
+            ${{ steps.changed.outputs.packages }}
+          commit-message: "chore(release): bump versions"
+          delete-branch: true
+
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
