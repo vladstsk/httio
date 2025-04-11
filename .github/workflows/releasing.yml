@@ -82,22 +82,25 @@ jobs:
           git push origin $BRANCH
           git push origin --tags
 
-      - name: Create Pull Request
+      - name: Create and auto-merge Release PR
         if: steps.changed.outputs.packages != ''
-        id: cpr
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.event.pull_request.base.ref }}
-          title: "chore(release): bump versions for ${{ steps.changed.outputs.packages }}"
-          body: |
-            This PR bumps versions for the following packages:
-            ${{ steps.changed.outputs.packages }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED: ${{ steps.changed.outputs.packages }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          RELEASE_BRANCH="release/pr-${PR_NUM}"
+          echo "→ Preparing Release PR from ${RELEASE_BRANCH} into ${BASE_REF} for packages: ${CHANGED}"
 
-      - name: Enable auto-merge for Release PR
-        if: steps.cpr.outputs.pull-request-number
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
-          merge-method: squash
+          gh pr create \
+            --title "chore(release): bump versions for ${CHANGED}" \
+            --body "This PR bumps versions for the following packages:\n${CHANGED}" \
+            --base "${BASE_REF}" \
+            --head "${RELEASE_BRANCH}" \
+            --label "auto-merge"
+
+          NEW_PR_NUM=$(gh pr view --json number --jq .number --head "${RELEASE_BRANCH}")
+          echo "→ Release PR #${NEW_PR_NUM} created"
+
+          gh pr merge "${NEW_PR_NUM}" --squash --delete-branch --auto
