@@ -7,9 +7,9 @@ on:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true
-
     runs-on: ubuntu-latest
+
+    if: github.event.pull_request.merged == true
 
     permissions:
       contents: write
@@ -94,7 +94,6 @@ jobs:
             This PR bumps versions for updated packages:
             ${{ steps.changed.outputs.packages }}
           commit-message: "chore(release): bump versions"
-          delete-branch: true
 
       - name: Enable auto-merge
         if: steps.cpr.outputs.pull-request-operation == 'created'
