@@ -51,21 +51,16 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-
-          level=0
-          if [[ ${{ github.event.pull_request.title }} =~ BREAKING[[:space:]]CHANGE ]] || [[ ${{ github.event.pull_request.title }} =~ .*!.* ]]; then
-          level=3
-          elif [[ ${{ github.event.pull_request.title }} =~ ^feat ]]; then
-          level=2
-          elif [[ ${{ github.event.pull_request.title }} =~ ^fix|^perf ]]; then
-          level=1
-          fi
           
-          case $level in
-          3) bump=major ;;
-          2) bump=minor ;;
-          *) bump=patch ;;
-          esac
+          pr_title="${{ github.event.pull_request.title }}"
+          
+          if [[ "$pr_title" =~ BREAKING[[:space:]]CHANGE ]] || [[ "$pr_title" =~ .*!.* ]]; then
+            bump="major"
+          elif [[ "$pr_title" =~ ^feat ]]; then
+            bump="minor"
+          else
+            bump="patch"
+          fi
 
           BRANCH="releases/${{ github.event.pull_request.number }}"
           git checkout -b $BRANCH
