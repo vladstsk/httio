@@ -85,7 +85,7 @@ jobs:
       - name: Create and auto-merge Release PR
         if: steps.changed.outputs.packages != ''
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHANGED: ${{ steps.changed.outputs.packages }}
           PR_NUM: ${{ github.event.pull_request.number }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
