@@ -226,4 +226,4 @@ const httio = client({
 - `response.buffer()` - Parse response as ArrayBuffer
 - `response.stream()` - Parse response as ReadableStream
 
-[//]: # (comment 123)
+[//]: # (comment)
