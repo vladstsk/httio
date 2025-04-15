@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "allowJs": true,
+    "incremental": true,
+    "jsx": "preserve",
+    "lib": ["DOM", "DOM.iterable", "ESNext"],
+    "noEmit": true,
+    "plugins": [{ "name": "next" }]
+  },
+  "display": "Next",
+  "extends": "./base.json"
+}

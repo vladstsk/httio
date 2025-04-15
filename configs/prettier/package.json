@@ -1,0 +1,8 @@
+{
+  "name": "@repo/prettier",
+  "private": true,
+  "main": "config.json",
+  "dependencies": {
+    "prettier": "^3.4.2"
+  }
+}

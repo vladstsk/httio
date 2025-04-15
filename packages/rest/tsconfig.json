@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable"],
+    "paths": {
+      "~/*": ["./src/*"],
+      "~/types/*": ["./types/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"],
+  "extends": "@repo/typescript/base",
+  "include": ["**/*.ts", "**/*.tsx"]
+}

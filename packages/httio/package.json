@@ -1,0 +1,60 @@
+{
+  "name": "httio",
+  "version": "0.4.0",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "lint": "eslint --max-warnings 0",
+    "test": "jest --coverage"
+  },
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "browser": "dist/index.mjs",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "description": "Modern, lightweight HTTP client for JavaScript, with handy tools for working with requests and responses.",
+  "keywords": [
+    "fetch",
+    "request",
+    "requests",
+    "http",
+    "https",
+    "fetching",
+    "get",
+    "url",
+    "curl",
+    "wget",
+    "net",
+    "network",
+    "ajax",
+    "api",
+    "rest",
+    "xhr",
+    "browser",
+    "got",
+    "axios",
+    "node-fetch"
+  ],
+  "license": "MIT",
+  "author": "Vladyslav Stasiuk <vladstsk@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vladstsk/httio.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@repo/eslint": "*",
+    "@repo/jest": "*",
+    "@repo/typescript": "*",
+    "tsup": "^8.4.0"
+  }
+}
