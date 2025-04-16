@@ -2,32 +2,33 @@ import type { Json } from "~/types/data";
 import type { Fetcher, QueryParams } from "~/types/fetch";
 import type { Middleware } from "~/types/pipeline";
 import type { HttioRequestInit } from "~/types/request";
-import type { HttioResponse } from "~/types/response";
-
-export type HttioClientOptions = Omit<HttioRequestInit, "body" | "method"> & {
-  fetch?: Fetcher;
-  query?: QueryParams;
-  url?: URL | string;
-};
 
 export type HttioMethodOptions = Omit<HttioClientOptions, "fetch">;
 
-export declare interface HttioClient {
-  delete(url: string, options?: HttioMethodOptions): HttioResponse;
-
+export declare interface HttioClient extends HttioClientMethods {
   extends(options: HttioClientOptions): HttioClient;
 
-  get(url: string, options?: HttioMethodOptions): HttioResponse;
-
-  head(url: string, options?: HttioMethodOptions): HttioResponse;
-
-  options(url: string, options?: HttioMethodOptions): HttioResponse;
-
-  patch(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): HttioResponse;
-
-  post(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): HttioResponse;
-
-  put(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): HttioResponse;
-
   use(...middlewares: Middleware[]): this;
+}
+
+export declare interface HttioClientMethods {
+  delete(url: string, options?: HttioMethodOptions): ResponseInstance;
+
+  get(url: string, options?: HttioMethodOptions): ResponseInstance;
+
+  head(url: string, options?: HttioMethodOptions): ResponseInstance;
+
+  options(url: string, options?: HttioMethodOptions): ResponseInstance;
+
+  patch(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): ResponseInstance;
+
+  post(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): ResponseInstance;
+
+  put(url: string, payload?: BodyInit | Json, options?: HttioMethodOptions): ResponseInstance;
+}
+
+export declare interface HttioClientOptions extends Omit<HttioRequestInit, "body" | "method"> {
+  fetch?: Fetcher;
+  query?: QueryParams;
+  url?: URL | string;
 }

@@ -1,19 +1,25 @@
 import type { Json } from "~/types/data";
 
-export declare interface HttioResponse {
-  blob(): Promise<Blob>;
+export type ResponseInstance = HttioBody & Promise<HttioResponse>;
 
-  buffer(): Promise<ArrayBuffer>;
+export declare interface HttioBody {
+  arrayBuffer(): Promise<ArrayBuffer>;
+
+  blob(): Promise<Blob>;
 
   bytes(): Promise<Uint8Array>;
 
-  clone(): HttioResponse;
-
   json<T extends Json>(): Promise<T>;
 
-  origin(): Promise<Response>;
-
-  stream(): Promise<ReadableStream>;
+  stream(): Promise<ReadableStream<Uint8Array>>;
 
   text(): Promise<string>;
+}
+
+export declare interface HttioResponse extends HttioBody {
+  headers: Headers;
+  status: number;
+  url: URL;
+
+  toString(): string;
 }
