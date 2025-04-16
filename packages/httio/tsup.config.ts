@@ -1,10 +1,12 @@
 import { defineConfig } from "tsup";
 
+const entries = ["src/index.ts", "src/errors/index.ts"];
+
 export default defineConfig((options) => [
   {
     bundle: true,
     clean: !options.watch,
-    entry: ["src/index.ts"],
+    entry: entries,
     format: ["esm", "cjs"],
     minify: !options.watch,
     platform: "neutral",
@@ -21,7 +23,7 @@ export default defineConfig((options) => [
     dts: {
       only: true,
     },
-    entry: ["src/index.ts"],
+    entry: entries,
     platform: "neutral",
     silent: !!options.watch,
   },

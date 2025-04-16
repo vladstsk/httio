@@ -1,32 +1,22 @@
 import type { HttioRequest, HttioRequestInit } from "~/types/request";
+import assign from "~/utils/assign";
 import { REQUEST } from "~/utils/consts";
-import { isPlaneObject } from "~/utils/validate";
+import { isString } from "~/utils/validate";
 
 export default function request(url: URL | string, options: HttioRequestInit): HttioRequest {
-  const { headers, ...init } = options;
+  const { headers, method, ...init } = options;
 
-  if (!init.method) {
-    throw new Error("Invalid method");
+  if (isString(url)) {
+    url = new URL(url);
   }
 
-  if (headers === null || (headers && !(headers instanceof Headers || isPlaneObject(headers)))) {
-    throw new Error("Invalid headers");
-  }
-
-  return Object.assign({ [REQUEST]: REQUEST }, init, {
+  return assign({ [REQUEST]: REQUEST }, init, {
     headers: new Headers(headers),
-    url: new URL(url),
+    method: method.toUpperCase(),
+    url,
 
-    clone(this: HttioRequest): HttioRequest {
-      const { url, ...init } = this;
-
-      return request(url, init);
-    },
-
-    toRequest(): Request {
-      const { url, ...init } = this;
-
-      return new Request(url, init);
+    toString() {
+      return `[${options.method.toUpperCase()}] ${url.toString()}`;
     },
   });
 }
