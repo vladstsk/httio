@@ -60,7 +60,7 @@ jobs:
             fi
           done
 
-          npx lerna publish from-package --yes
+          npx lerna publish from-git --yes
 
       - name: Create Release Pull Request
         id: cpr
