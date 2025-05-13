@@ -1,39 +1,33 @@
-import body from "~/http/body";
-import type { HttioBody, HttioResponse, ResponseInstance } from "~/types/response";
-import assign from "~/utils/assign";
-import { RESPONSE } from "~/utils/consts";
-import pick from "~/utils/pick";
+import { ResponseSymbol } from "~/constants/http";
+import { getBodyInit, getResponseBody } from "~/http/body";
+import type { Payload } from "~/types/data";
+import type { HttioResponse } from "~/types/http";
+import { assign, references } from "~/utils/object";
+import { instanceOf, isHttioResponse } from "~/utils/validate";
 
-export function wrap(method: string, response: Response, body: HttioBody, urlFallback: URL): HttioResponse {
-  const url = response.url ? new URL(response.url) : urlFallback;
-  const status = response.url ? response.statusText : "OK";
+export function response(origin: Response): HttioResponse;
+export function response(instance: HttioResponse): HttioResponse;
+export function response(payload?: Payload, init?: ResponseInit): HttioResponse;
+export function response(origin: HttioResponse | Payload | Response, init?: ResponseInit): HttioResponse {
+  if (isHttioResponse(origin)) {
+    return origin;
+  }
 
-  return assign(pick(response, "headers", "status"), body, {
-    [RESPONSE]: RESPONSE,
+  if (!instanceOf(origin, Response)) {
+    return response(new Response(getBodyInit(origin), init));
+  }
 
-    url,
+  return assign(
+    { [ResponseSymbol]: ResponseSymbol },
 
-    toString() {
-      return `[${method.toUpperCase()}] ${url}: ${response.status} ${status}`;
-    },
-  });
-}
+    getResponseBody(origin),
 
-export default function response(url: URL, method: string, factory: () => Promise<Response>): ResponseInstance {
-  const promise = factory().then(
-    (response) => [response] as const,
-    (error) => [null as never, error] as const
-  );
+    references(origin, "headers", "ok", "redirected", "status", "statusText", "type", "url"),
 
-  const data = body(promise);
-
-  const instance = promise.then(([res, error]) => {
-    if (error) {
-      throw error;
+    {
+      clone(): HttioResponse {
+        return response(origin.clone());
+      },
     }
-
-    return wrap(method, res, data, url);
-  });
-
-  return assign(instance, data);
+  );
 }
