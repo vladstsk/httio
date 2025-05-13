@@ -19,6 +19,5 @@
   "packages": [
     "packages/*"
   ],
-  "since": "main",
   "version": "independent"
 }
