@@ -1,64 +1,80 @@
-import pipeline from "~/http/pipeline";
-import type { HttioClient, HttioClientMethods, HttioClientOptions, HttioMethodOptions } from "~/types/client";
+import { pipeline } from "~/http/pipeline";
+import type { HttioClient, HttioClientOptions, HttioRequestOptions } from "~/types/client";
+import type { Payload } from "~/types/data";
+import type { Fetcher } from "~/types/fetch";
 import type { Middleware } from "~/types/pipeline";
-import assign from "~/utils/assign";
-import merge from "~/utils/merge";
-import url from "~/utils/url";
-import { isPlaneObject } from "~/utils/validate";
+import { assign, merge } from "~/utils/object";
+import { join, search } from "~/utils/url";
 
-const METHODS_WITH_BODY: (keyof HttioClientMethods)[] = ["delete", "options", "patch", "post", "put"];
+type RequestOptions = Omit<HttioClientOptions, "fetch"> & {
+  fetch: Fetcher;
+};
 
-const METHODS: (keyof HttioClientMethods)[] = ["get", "head", ...METHODS_WITH_BODY];
-
-export default function client(options?: HttioClientOptions): HttioClient {
-  const { fetch: $fetch = fetch, url: base, ...init } = options || {};
-
-  const middleware = pipeline($fetch);
-
-  const methods = {} as HttioClientMethods;
-
-  for (const method of METHODS) {
-    // @ts-expect-error ---
-    methods[method] = (path, body, options) => {
-      if (!METHODS_WITH_BODY.includes(method)) {
-        if (isPlaneObject(body)) {
-          options = body as HttioMethodOptions;
-        }
-
-        body = void 0;
-      }
-
-      const { query, ...$options } = merge(init, options || {});
-
-      return middleware.handle(
-        url(base || path, path, query),
-        assign($options, {
-          body,
-          method: method.toUpperCase(),
-        })
-      );
-    };
-  }
-
-  return assign(methods, {
-    extends(_options: HttioClientOptions): HttioClient {
-      if (!_options.fetch) {
-        _options.fetch = $fetch;
-      }
-
-      if (!_options.url) {
-        _options.url = base;
-      } else if (base) {
-        _options.url = url(base, _options.url instanceof URL ? _options.url.toString() : _options.url);
-      }
-
-      return client(merge(init, _options)).use(...middleware.pipes);
-    },
-
-    use(this: HttioClient, ...middlewares: Middleware[]): HttioClient {
-      middleware.use(...middlewares);
-
-      return this;
-    },
+function mergeOptions(oldOptions?: HttioClientOptions, newOptions?: HttioClientOptions): RequestOptions {
+  return assign({ fetch }, oldOptions, newOptions, {
+    params: merge(oldOptions?.params, newOptions?.params),
+    url: join(oldOptions?.url || "", newOptions?.url || ""),
   });
+}
+
+function request(method: string, payload: Payload, middlewares: Middleware[], options: RequestOptions) {
+  const { fetch, headers, params, retry, timeout, url, ...$init } = options;
+
+  const handle = pipeline(middlewares, fetch, { retry, timeout });
+
+  assign($init, {
+    body: payload,
+    headers: headers,
+    method: method.toUpperCase(),
+  });
+
+  return handle(url + search(params), $init);
+}
+
+export function client(options?: HttioClientOptions): HttioClient {
+  const middlewares: Middleware[] = [];
+
+  return assign(
+    {
+      extends(init: HttioClientOptions): HttioClient {
+        return client(mergeOptions(options, init)).use(...middlewares);
+      },
+
+      use(this: HttioClient, ...middlewares: Middleware[]): HttioClient {
+        middlewares.push(...middlewares);
+
+        return this;
+      },
+    },
+
+    {
+      delete(path: string, init?: HttioRequestOptions) {
+        return request("delete", undefined, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      get(path: string, init?: HttioRequestOptions) {
+        return request("get", undefined, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      head(path: string, init?: HttioRequestOptions) {
+        return request("head", undefined, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      options(path: string, init?: HttioRequestOptions) {
+        return request("options", undefined, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      patch(path: string, payload?: Payload, init?: HttioRequestOptions) {
+        return request("patch", payload, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      post(path: string, payload?: Payload, init?: HttioRequestOptions) {
+        return request("post", payload, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+
+      put(path: string, payload?: Payload, init?: HttioRequestOptions) {
+        return request("put", payload, middlewares, mergeOptions(options, assign({}, init, { url: path })));
+      },
+    }
+  );
 }

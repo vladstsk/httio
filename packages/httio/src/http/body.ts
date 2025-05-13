@@ -1,27 +1,61 @@
-import type { HttioBody } from "~/types/response";
-import { isFunction } from "~/utils/validate";
+import type { HttioBody } from "~/types/body";
+import type { Payload } from "~/types/data";
+import { isPlaneObject } from "~/utils/validate";
 
-type Failure = readonly [never, unknown];
-type Success = readonly [Response, never?];
-
-function bind<T>(promise: Promise<Failure | Success>, key: keyof Response) {
-  return async function handle(): Promise<T> {
-    const [data, error] = await promise;
-
-    if (error) {
-      throw error;
-    }
-
-    return isFunction(data[key]) ? (data[key]() as T) : (data[key] as T);
-  };
-}
-
-export default function body(promise: Promise<Failure | Success>): HttioBody {
-  const data = { stream: bind(promise, "body") } as HttioBody;
-
-  for (const property of ["arrayBuffer", "blob", "bytes", "json", "text"] satisfies (keyof HttioBody)[]) {
-    data[property] = bind(promise, property) as never;
+export function getBodyInit(payload?: Payload): BodyInit | null | undefined {
+  if (isPlaneObject(payload)) {
+    return JSON.stringify(payload);
   }
 
-  return data;
+  return payload;
+}
+
+export function getBodyPayload(body?: BodyInit | Payload): Payload {
+  try {
+    return JSON.parse(body as string);
+  } catch {
+    return body;
+  }
+}
+
+export function getResponseBody(response: Body | Promise<Body>): HttioBody {
+  const promise = Promise.resolve(response);
+
+  return {
+    async blob() {
+      const res = await promise;
+
+      return res.blob();
+    },
+
+    async buffer() {
+      const res = await promise;
+
+      return res.arrayBuffer();
+    },
+
+    async bytes() {
+      const res = await promise;
+
+      return res.bytes();
+    },
+
+    async json() {
+      const res = await promise;
+
+      return res.json();
+    },
+
+    async stream() {
+      const res = await promise;
+
+      return res.body || new ReadableStream();
+    },
+
+    async text() {
+      const res = await promise;
+
+      return res.text();
+    },
+  };
 }

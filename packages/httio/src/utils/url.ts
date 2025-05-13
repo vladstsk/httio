@@ -1,58 +1,86 @@
 import type { QueryParams } from "~/types/fetch";
-import { isArray, isPlaneObject, type } from "~/utils/validate";
+import { isArray, isPlaneObject, isPrimitive } from "~/utils/validate";
 
 function inject(search: URLSearchParams, parent?: string, params?: QueryParams): void {
-  for (const name in params) {
+  if (!params) {
+    return;
+  }
+
+  for (const [name, value] of Object.entries(params)) {
     const key = parent ? `${parent}[${name}]` : name;
 
-    if (isArray(params[name])) {
-      for (let i = 0; i < params[name].length; i++) {
-        const index = `${key}[${i + 1}]`;
+    if (isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        const index = `${key}[${i}]`;
+        const item = value[i];
 
-        if (["Boolean", "Number", "String"].includes(type(params[name][i]))) {
-          search.append(index, String(params[name][i]));
+        if (isPrimitive(item)) {
+          search.append(index, encodeURI(String(item)));
         } else {
-          inject(search, index, params[name][i] as QueryParams);
+          inject(search, index, item);
         }
       }
     }
 
-    if (["Boolean", "Number", "String"].includes(type(params[name]))) {
-      search.append(key, String(params[name]));
-    }
-
-    if (isPlaneObject(params[name])) {
-      inject(search, key, params[name] as QueryParams);
+    if (isPrimitive(value)) {
+      search.append(key, String(value));
+    } else if (isPlaneObject(value)) {
+      inject(search, key, value);
     }
   }
 }
 
-export default function url(base: URL | string, path: string, params?: QueryParams): URL {
-  if (!(base instanceof URL)) {
-    base = new URL(base);
+export function join(...paths: string[]): string {
+  let domain: string | undefined;
+  const segments: string[] = [];
+
+  for (const path of paths) {
+    const offset = path.indexOf("://");
+    let start: number = 0;
+    let end: number = path.length;
+
+    if (offset > 0) {
+      start = path.indexOf("/", offset + 3);
+
+      if (start < 0) {
+        start = path.length;
+      }
+    }
+
+    if (offset > 0) {
+      domain = path.slice(0, start);
+    }
+
+    for (; start < path.length; start++) {
+      if (path[start] !== "/") {
+        break;
+      }
+    }
+
+    for (; end > start; end--) {
+      if (path[end - 1] !== "/") {
+        break;
+      }
+    }
+
+    if (start < end) {
+      segments.push(path.slice(start, end));
+    }
   }
 
-  let pathname = base.pathname;
-
-  base.pathname = "";
-
-  if (path.includes("://")) {
-    pathname = "";
+  if (domain) {
+    segments.unshift(domain);
   }
 
-  const url = new URL(path, base);
+  return segments.join("/");
+}
 
-  url.pathname = (pathname + url.pathname).replace("//", "/");
+export function search(params?: QueryParams) {
+  const target = new URLSearchParams();
 
-  if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
-    url.pathname = url.pathname.slice(0, -1);
-  }
+  inject(target, void 0, params);
 
-  if (url.search !== base.search) {
-    url.search = base.search + "&" + url.search.slice(1);
-  }
+  const value = target.toString();
 
-  inject(url.searchParams, void 0, params);
-
-  return url;
+  return value ? "?" + value : value;
 }

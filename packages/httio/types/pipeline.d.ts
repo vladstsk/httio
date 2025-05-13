@@ -1,20 +1,15 @@
-import type { HttioRequest, HttioRequestInit } from "~/types/request";
-import type { HttioResponse, ResponseInstance } from "~/types/response";
+import type { HttioBody } from "~/types/body";
+import type { Payload } from "~/types/data";
+import type { HttioRequest, HttioResponse } from "~/types/http";
 
-export type MiddlewareResult = BodyInit | HttioResponse | Response | ResponseInstance | null;
+type MaybePromise<T> = Promise<T> | T;
 
 export declare interface Middleware {
-  (request: HttioRequest, next: NextMiddleware): MiddlewareResult | Promise<MiddlewareResult>;
+  (request: HttioRequest, next: NextMiddleware): MaybePromise<HttioResponse | Payload | Response>;
 }
 
 export declare interface NextMiddleware {
-  (request: HttioRequest): ResponseInstance;
-}
+  (request: HttioRequest | Request): HttioBody & Promise<HttioResponse>;
 
-export declare interface Pipeline {
-  readonly pipes: Middleware[];
-
-  handle(url: URL | string, options: HttioRequestInit): ResponseInstance;
-
-  use(...middleware: Middleware[]): this;
+  (url: URL | string, init?: HttioRequestInit): HttioBody & Promise<HttioResponse>;
 }

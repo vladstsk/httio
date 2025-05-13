@@ -1,2 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Json = Json[] | Record<PropertyKey, any> | boolean | number | string | null;
+export type Json = Json[] | Record<PropertyKey, Json> | boolean | number | string | null;
+
+export type Payload = BodyInit | Record<PropertyKey, Json> | null | undefined;
+
+export type PlaneObject = Record<string, unknown>;

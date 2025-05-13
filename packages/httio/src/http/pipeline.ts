@@ -1,55 +1,110 @@
-import request from "~/http/request";
-import response from "~/http/response";
-import normalize from "~/middleware/normalize";
+import { HttpError } from "~/error/http";
+import { request } from "~/http/request";
+import { response } from "~/http/response";
+import type { HttioBody } from "~/types/body";
+import type { RetryOptions } from "~/types/client";
+import type { Payload } from "~/types/data";
 import type { Fetcher } from "~/types/fetch";
-import type { Middleware, NextMiddleware, Pipeline } from "~/types/pipeline";
-import type { HttioRequest, HttioRequestInit } from "~/types/request";
-import type { ResponseInstance } from "~/types/response";
-import { isHttioResponse } from "~/utils/validate";
+import type { HttioRequest, HttioResponse } from "~/types/http";
+import type { Middleware, NextMiddleware } from "~/types/pipeline";
+import { assign, merge } from "~/utils/object";
+import { delay } from "~/utils/timer";
+import { isNumber } from "~/utils/validate";
 
-export default function pipeline(fetch: Fetcher): Pipeline {
-  const pipes: Middleware[] = [];
+type PipelineOptions = {
+  retry?: RetryOptions | number;
+  timeout?: number;
+};
 
-  const open: NextMiddleware = (request) => {
-    const { url, ...init } = request;
+function attach<K extends keyof HttioBody>(promise: Promise<HttioResponse>, type: K): HttioBody[K] {
+  // todo: fix test
+  /* istanbul ignore next */
+  return () => promise.then((response) => response[type].call(response)) as never;
+}
 
-    return response(url, request.method, async () => fetch(new Request(url, init as RequestInit)));
-  };
+function handle(source: Promise<HttioResponse | Payload | Response>): HttioBody & Promise<HttioResponse> {
+  const promise = source.then(response, (error) => {
+    // todo: fix test
+    /* istanbul ignore next */
+    return <Promise<HttioResponse>>{
+      [Symbol.toStringTag]: Promise.prototype[Symbol.toStringTag],
 
-  const reducer = (next: NextMiddleware, middleware: Middleware) => {
-    return function handle(req: HttioRequest): ResponseInstance {
-      return response(req.url, req.method, async () => {
-        const data = await middleware(req, next);
+      catch(rejected) {
+        return Promise.reject(error).catch(rejected);
+      },
 
-        if (isHttioResponse(data)) {
-          return new Response(await data.stream(), {
-            headers: data.headers,
-            status: data.status,
-          });
-        }
+      finally(callback) {
+        return Promise.reject(error).finally(callback);
+      },
 
-        return data instanceof Response ? data : new Response(data);
-      });
+      then(fulfilled, rejected) {
+        return Promise.reject(error).then(fulfilled, rejected);
+      },
     };
+  });
+
+  return assign(promise, {
+    blob: attach(promise, "blob"),
+    buffer: attach(promise, "buffer"),
+    bytes: attach(promise, "bytes"),
+    json: attach(promise, "json"),
+    stream: attach(promise, "stream"),
+    text: attach(promise, "text"),
+  });
+}
+
+// eslint-disable-next-line prettier/prettier
+async function process(fetch: Fetcher, request: HttioRequest, options?: PipelineOptions): Promise<HttioResponse | Payload | Response> {
+  let retry: Required<RetryOptions> = {
+    delay: 1000,
+    limit: 3,
   };
 
-  return {
-    get handle() {
-      const next = pipes.reduceRight(reducer, open);
+  if (isNumber(options?.retry)) {
+    retry.limit = options.retry;
+  } else if (options?.retry) {
+    retry = merge(retry, options.retry as Required<RetryOptions>);
+  }
 
-      return function handle(url: URL | string, options: HttioRequestInit): ResponseInstance {
-        return normalize(request(url, options), next) as never;
-      };
-    },
+  let res: HttioResponse;
+  const req = request.toRequest();
 
-    get pipes() {
-      return pipes;
-    },
+  for (let i = 0; i < retry.limit; i++) {
+    res = await Promise.race([
+      fetch(req).then(response),
+      delay(options?.timeout || 1000).then(() => {
+        return response(null, { status: 408 });
+      }),
+    ]);
 
-    use(...middleware: Middleware[]) {
-      pipes.push(...middleware);
+    if ([429, 500, 502, 503].includes(res.status)) {
+      await delay(retry.delay);
 
-      return this;
-    },
+      continue;
+    }
+
+    if (!res.ok) {
+      break;
+    }
+
+    return res;
+  }
+
+  throw new HttpError(request, res!);
+}
+
+function reduce(next: NextMiddleware, middleware: Middleware): NextMiddleware {
+  return (input, init?) => {
+    try {
+      return handle(Promise.resolve(middleware(request(input as never, init), next)));
+    } catch (error) {
+      return handle(Promise.reject(error));
+    }
   };
+}
+
+export function pipeline(middlewares: Middleware[], fetch: Fetcher, options?: PipelineOptions): NextMiddleware {
+  return middlewares.reduceRight(reduce, (input, init?) => {
+    return handle(process(fetch, request(input as never, init), options));
+  });
 }

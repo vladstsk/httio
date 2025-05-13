@@ -1,3 +1,5 @@
+[![Releasing](https://github.com/vladstsk/httio/actions/workflows/releasing.yml/badge.svg)](https://github.com/vladstsk/httio/actions/workflows/releasing.yml)
+
 Modern, lightweight HTTP client for JavaScript, with handy tools for working with requests and responses.
 
 ## 🚀 Features
