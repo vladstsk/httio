@@ -55,16 +55,16 @@
 
 ## Httio vs. The Rest
 
-| Library          |                             Size (min + gzip)                              | TS-first | Browser | Node | Native `fetch` | Middleware | Retries |                                                                  Deps                                                                  | Notes          |
-|------------------|:--------------------------------------------------------------------------:|:--------:|:-------:|:----:|:--------------:|:----------:|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------:|----------------|
-| **Httio**        |      ![size](https://img.shields.io/bundlephobia/minzip/httio?label)       |    ✅    |   ✅    |  ✅  |       ✅       |    ✅     |   ✅    |            [![deps](https://badgen.net/bundlephobia/dependency-count/httio?label)](https://bundlephobia.com/package/httio)             | Modern, tiny   |
-| Axios            |      ![size](https://img.shields.io/bundlephobia/minzip/axios?label)       |    ⚠️    |   ✅    |  ✅  |       ❌       |    ⚠️     |   ⚠️    |            [![deps](https://badgen.net/bundlephobia/dependency-count/axios?label)](https://bundlephobia.com/package/axios)             | Heavy          |
-| isomorphic-fetch | ![size](https://img.shields.io/bundlephobia/minzip/isomorphic-fetch?label) |    ❌    |   ✅    |  ✅  |       ✅       |    ❌     |   ❌    | [![deps](https://badgen.net/bundlephobia/dependency-count/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch)  | Simple shim    |
-| ky               |         ![size](https://img.shields.io/bundlephobia/minzip/ky?label)       |    ✅    |   ✅    |  ✅  |       ✅       |    ⚠️     |   ✅    |               [![deps](https://badgen.net/bundlephobia/dependency-count/ky?label)](https://bundlephobia.com/package/ky)                | Small, fetch-first   |
-| superagent       |    ![size](https://img.shields.io/bundlephobia/minzip/superagent?label)    |    ⚠️    |   ✅    |  ✅  |       ❌       |    ✅     |   ⚠️    |       [![deps](https://badgen.net/bundlephobia/dependency-count/superagent?label)](https://bundlephobia.com/package/superagent)        | Classic        |
-| request          |     ![size](https://img.shields.io/bundlephobia/minzip/request?label)      |    ❌    |   ❌    |  ✅  |       ❌       |    ❌     |   ❌    |          [![deps](https://badgen.net/bundlephobia/dependency-count/request?label)](https://bundlephobia.com/package/request)           | Deprecated     |
-| r2               |        ![size](https://img.shields.io/bundlephobia/minzip/r2?label)        |    ⚠️    |   ❌    |  ✅  |       ✅       |    ❌     |   ❌    |               [![deps](https://badgen.net/bundlephobia/dependency-count/r2?label)](https://bundlephobia.com/package/r2)                | Minimal        |
-| phin             |       ![size](https://img.shields.io/bundlephobia/minzip/phin?label)       |    ⚠️    |   ❌    |  ✅  |       ❌       |    ❌     |   ✅    |             [![deps](https://badgen.net/bundlephobia/dependency-count/phin?label)](https://bundlephobia.com/package/phin)              | Promise client |
+| Library          |                       Size<br>(min&nbsp;+&nbsp;gzip)                       | TS&#8209;first | Browser | Node | Native&nbsp;`fetch` | Middleware | Retries |                                                                  Deps                                                                  | Notes                         |
+|------------------|:--------------------------------------------------------------------------:|:--------------:|:-------:|:----:|:-------------------:|:----------:|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------:|-------------------------------|
+| **Httio**        |      ![size](https://img.shields.io/bundlephobia/minzip/httio?label)       |       ✅       |   ✅    |  ✅  |          ✅        |       ✅   |   ✅    |            [![deps](https://badgen.net/bundlephobia/dependency-count/httio?label)](https://bundlephobia.com/package/httio)             | Modern,&nbsp;tiny             |
+| Axios            |      ![size](https://img.shields.io/bundlephobia/minzip/axios?label)       |       ⚠️       |   ✅    |  ✅  |          ❌        |       ⚠️   |   ⚠️    |            [![deps](https://badgen.net/bundlephobia/dependency-count/axios?label)](https://bundlephobia.com/package/axios)             | Heavy                         |
+| isomorphic-fetch | ![size](https://img.shields.io/bundlephobia/minzip/isomorphic-fetch?label) |       ❌       |   ✅    |  ✅  |          ✅        |       ❌   |   ❌    | [![deps](https://badgen.net/bundlephobia/dependency-count/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch)  | Simple&nbsp;shim              |
+| ky               |        ![size](https://img.shields.io/bundlephobia/minzip/ky?label)        |       ✅       |   ✅    |  ✅  |          ✅        |       ⚠️   |   ✅    |               [![deps](https://badgen.net/bundlephobia/dependency-count/ky?label)](https://bundlephobia.com/package/ky)                | Small,&nbsp;fetch&#8209;first |
+| superagent       |    ![size](https://img.shields.io/bundlephobia/minzip/superagent?label)    |       ⚠️       |   ✅    |  ✅  |          ❌        |       ✅   |   ⚠️    |       [![deps](https://badgen.net/bundlephobia/dependency-count/superagent?label)](https://bundlephobia.com/package/superagent)        | Classic                       |
+| request          |     ![size](https://img.shields.io/bundlephobia/minzip/request?label)      |       ❌       |   ❌    |  ✅  |          ❌        |       ❌   |   ❌    |          [![deps](https://badgen.net/bundlephobia/dependency-count/request?label)](https://bundlephobia.com/package/request)           | Deprecated                    |
+| r2               |        ![size](https://img.shields.io/bundlephobia/minzip/r2?label)        |       ⚠️       |   ❌    |  ✅  |          ✅        |       ❌   |   ❌    |               [![deps](https://badgen.net/bundlephobia/dependency-count/r2?label)](https://bundlephobia.com/package/r2)                | Minimal                       |
+| phin             |       ![size](https://img.shields.io/bundlephobia/minzip/phin?label)       |       ⚠️       |   ❌    |  ✅  |          ❌        |       ❌   |   ✅    |             [![deps](https://badgen.net/bundlephobia/dependency-count/phin?label)](https://bundlephobia.com/package/phin)              | Promise&nbsp;client           |
 
 
 ### Key takeaways
@@ -202,14 +202,14 @@ await v2.get('/status'); // → https://api.example.com/v2/status
 
 ### Supported options
 
-| Option    | Type                                | Default                            | Description                                                      |
-|-----------|-------------------------------------|------------------------------------|------------------------------------------------------------------|
-| `url`     | `string \| URL`                     | –                                  | Base URL for relative paths.                                     |
-| `url`     | `string \| URL` (only in `extends`) | –                                  | Extends the base URL or replaces it if the link contains a host. |
-| `params`  | `Record<string, string \| number>`  | –                                  | Query params (auto-encoded).                                     |
-| `timeout` | `number`                            | `1000`                             | Abort request after N ms.                                        |
-| `retry`   | `number \| RetryOptions`            | `{ limit: 3, delay: 1000 }`        | How many times (and with what delay) to retry failed requests.   |
-| `fetch`   | `Fetcher`                           | `globalThis.fetch \| window.fetch` | Custom fetch implementation (handy in tests).                    |
+| Option    | Type                                                            | Default                                                         | Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+|-----------|-----------------------------------------------------------------|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `url`     | `string \| URL`                                                 | –                                                               | Base URL for relative paths.                                                                                                                                                                                                  |
+| `url`     | `string \| URL` (only in `extends`)                             | –                                                               | Extends the base URL or replaces it if the link contains a host.                                                                                                                                                              |
+| `params`  | <code>Record&lt;string,&nbsp;string&nbsp;\|&nbsp;number></code> | –                                                               | Query params (auto-encoded).                                                                                                                                                                                                  |
+| `timeout` | `number`                                                        | `1000`                                                          | Abort request after N ms.                                                                                                                                                                                                     |
+| `retry`   | `number \| RetryOptions`                                        | <code>{&nbsp;limit:&nbsp;3,&nbsp;delay:&nbsp;1000&nbsp;}</code> | How many times (and with what delay) to retry failed requests.                                                                                                                                                                |
+| `fetch`   | `Fetcher`                                                       | <code>globalThis.fetch&nbsp;\|&nbsp;window.fetch</code>         | Custom fetch implementation (handy in tests).                                                                                                                                                                                 |
 
 > You can also pass any field accepted by the standard Fetch `Request`/`Response` objects; those options are forwarded unchanged.
 
@@ -382,11 +382,11 @@ See [configuration](#supported-options) for the list of parameters.
 
 Extends the native `RequestInit`:
 
-| Extra field | Type                              | Description                   |
-|-------------|-----------------------------------|-------------------------------|
-| `params`    | `Record<string,string \| number>` | Adds query parameters         |
-| `timeout`   | `number`                          | Aborts the request after N ms |
-| `retry`     | `number \| RetryOptions`          | How many times (and with what delay) to retry failed requests. |
+| Extra field | Type                                                            | Description                                                    |
+|-------------|-----------------------------------------------------------------|----------------------------------------------------------------|
+| `params`    | <code>Record&lt;string,&nbsp;string&nbsp;\|&nbsp;number></code> | Adds query parameters                                          |
+| `timeout`   | `number`                                                        | Aborts the request after N ms                                  |
+| `retry`     | `number \| RetryOptions`                                        | How many times (and with what delay) to retry failed requests. |
 
 ### Types
 
