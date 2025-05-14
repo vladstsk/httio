@@ -1,10 +1,10 @@
 # **Httio**
 
-[![Bundle coverage](https://codecov.io/gh/vladstsk/httio/branch/main/graph/badge.svg?flag=httio)](https://codecov.io/gh/vladstsk/httio?flag=httio)
-[![Bundle size](https://img.shields.io/bundlephobia/minzip/httio)](https://bundlephobia.com/package/httio)
-[![Bundle tree-shaking](https://badgen.net/bundlephobia/tree-shaking/httio)](https://bundlephobia.com/package/httio)
-[![Typed with TypeScript](https://badgen.net/npm/types/httio)](https://github.com/vladstsk/httio)
-[![License](https://img.shields.io/npm/l/httio)](https://github.com/vladstsk/httio/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/vladstsk/httio/graph/badge.svg?token=15VVLNIEN3)](https://codecov.io/gh/vladstsk/httio)
+[![size](https://img.shields.io/bundlephobia/minzip/httio)](https://bundlephobia.com/package/httio)
+[![tree-shaking](https://badgen.net/bundlephobia/tree-shaking/httio)](https://bundlephobia.com/package/httio)
+[![types](https://badgen.net/npm/types/httio)](https://github.com/vladstsk/httio)
+[![license](https://img.shields.io/npm/l/httio)](https://github.com/vladstsk/httio/blob/main/LICENSE)
 
 > Lightweight, type-safe HTTP client for browsers and Node.js.  
 > Built on top of the native `fetch` but provides a better DX with strong typing, middleware and a minimalistic API.
