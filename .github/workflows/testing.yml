@@ -49,8 +49,9 @@ jobs:
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./packages/httio/coverage/lcov.info,./packages/rest/coverage/lcov.info
-          flags: httio,rest
           slug: vladstsk/httio
+          flags: httio,rest
+          files: ./packages/httio/coverage/lcov.info,./packages/rest/coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          override_branch: main
+          fail_ci_if_error: true
