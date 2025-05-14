@@ -60,6 +60,7 @@
 | **Httio**        |      ![size](https://img.shields.io/bundlephobia/minzip/httio?label)       |    ✅    |   ✅    |  ✅  |       ✅       |    ✅     |   ✅    |            [![deps](https://badgen.net/bundlephobia/dependency-count/httio?label)](https://bundlephobia.com/package/httio)             | Modern, tiny   |
 | Axios            |      ![size](https://img.shields.io/bundlephobia/minzip/axios?label)       |    ⚠️    |   ✅    |  ✅  |       ❌       |    ⚠️     |   ⚠️    |            [![deps](https://badgen.net/bundlephobia/dependency-count/axios?label)](https://bundlephobia.com/package/axios)             | Heavy          |
 | isomorphic-fetch | ![size](https://img.shields.io/bundlephobia/minzip/isomorphic-fetch?label) |    ❌    |   ✅    |  ✅  |       ✅       |    ❌     |   ❌    | [![deps](https://badgen.net/bundlephobia/dependency-count/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch)  | Simple shim    |
+| ky               |         ![size](https://img.shields.io/bundlephobia/minzip/ky?label)       |    ✅    |   ✅    |  ✅  |       ✅       |    ⚠️     |   ✅    |               [![deps](https://badgen.net/bundlephobia/dependency-count/ky?label)](https://bundlephobia.com/package/ky)                | Small, fetch-first   |
 | superagent       |    ![size](https://img.shields.io/bundlephobia/minzip/superagent?label)    |    ⚠️    |   ✅    |  ✅  |       ❌       |    ✅     |   ⚠️    |       [![deps](https://badgen.net/bundlephobia/dependency-count/superagent?label)](https://bundlephobia.com/package/superagent)        | Classic        |
 | request          |     ![size](https://img.shields.io/bundlephobia/minzip/request?label)      |    ❌    |   ❌    |  ✅  |       ❌       |    ❌     |   ❌    |          [![deps](https://badgen.net/bundlephobia/dependency-count/request?label)](https://bundlephobia.com/package/request)           | Deprecated     |
 | r2               |        ![size](https://img.shields.io/bundlephobia/minzip/r2?label)        |    ⚠️    |   ❌    |  ✅  |       ✅       |    ❌     |   ❌    |               [![deps](https://badgen.net/bundlephobia/dependency-count/r2?label)](https://bundlephobia.com/package/r2)                | Minimal        |
@@ -258,16 +259,16 @@ import httio, { type Middleware } from 'httio';
 
 const auth: Middleware = async (req, next) => {
   req.headers.set('Authorization', `Bearer ${getToken()}`);
-  
+
   return next(req);
 };
 
 const logger: Middleware = async (req, next) => {
   const started = performance.now();
   const res = await next(req);
-  
+
   console.log(`${req.method} ${req.url} → ${res.status} (${Date.now() - started} ms)`);
-  
+
   return res;
 };
 
@@ -341,11 +342,11 @@ const reader = stream.getReader();
 
 while (true) {
   const { value, done } = await reader.read();
-  
+
   if (done) {
     break;
   }
-  
+
   console.log(new TextDecoder().decode(value));
 }
 ```
