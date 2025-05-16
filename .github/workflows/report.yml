@@ -1,34 +1,42 @@
-name: Testing
+name: Reporting
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [ "__CI__" ]
+    types:
+      - completed
 
 jobs:
   codecov:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.pull_requests[0].merged == true &&
+      (
+        github.event.workflow_run.pull_requests[0].base.ref == 'main' ||
+        github.event.workflow_run.pull_requests[0].base.ref == 'tests'
+      )
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        package: [ httio, rest ]
+
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
+      - name: Download coverage artifact
+        uses: dawidd6/action-download-artifact@v2
         with:
-          cache: 'npm'
-          node-version: 22
+          run_id: ${{ github.event.workflow_run.id }}
+          name: coverage
+          path: ./coverage
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-      - name: Upload coverage reports to Codecov
+      - name: Upload ${{ matrix.package }} coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          slug: vladstsk/httio
-          flags: httio,rest
-          files: ./packages/httio/coverage/lcov.info,./packages/rest/coverage/lcov.info
+          name: ${{ matrix.package }}
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/packages/${{ matrix.package }}/coverage/lcov.info
+          flags: ${{ matrix.package }}
           fail_ci_if_error: true

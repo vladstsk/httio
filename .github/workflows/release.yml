@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [ "CI" ]
+    types:
+      - completed
+
+jobs:
+  debug:
+    steps:
+      - name: Debug
+      - run: |
+          echo "run_id = ${{ github.event.workflow_run.id }}"
+          echo "artifact path = ${{ steps.download.outputs.dir }}"
+
+
+#  publish:
+#    if: >
+#      github.event.workflow_run.conclusion == 'success' &&
+#      (
+#        github.event.workflow_run.head_branch == 'main' ||
+#        github.event.workflow_run.head_branch == 'staging'
+#      )
+#
+#    runs-on: ubuntu-latest
+#
+#    permissions:
+#      contents: write
+#      id-token: write
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#
+#      - uses: actions/setup-node@v4
+#        with:
+#          cache: npm
+#          node-version: 22
+#          registry-url: "https://registry.npmjs.org"
+#
+#      - name: Download dist artifacts
+#        uses: dawidd6/action-download-artifact@v2
+#        with:
+#          run_id: ${{ github.event.workflow_run.id }}
+#          name: artifacts
+#          path: ./artifacts
+#
+#      ###############################################################
+#      # 2. находим пакеты, у которых изменилась версия
+#      ###############################################################
+#      - name: Detect changed packages
+#        id: detect
+#        run: |
+#          node ./scripts/changed-packages.js >> "$GITHUB_OUTPUT"
+#
+#      ###############################################################
+#      # 3. публикуем каждый изменившийся пакет
+#      ###############################################################
+#      - name: Publish to npm
+#        if: steps.detect.outputs.changed != ''
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#        run: |
+#          IFS=',' read -ra PKGS <<< "${{ steps.detect.outputs.changed }}"
+#          for P in "${PKGS[@]}"; do
+#            echo "Publishing $P"
+#            npm publish "./artifacts/dist-$P" --tag latest --access public
+#          done
+#
+#      ###############################################################
+#      # 4. создаём теги и Release-страницу
+#      ###############################################################
+#      - name: Push git tags
+#        if: steps.detect.outputs.changed != ''
+#        run: |
+#          IFS=',' read -ra PKGS <<< "${{ steps.detect.outputs.changed }}"
+#          for P in "${PKGS[@]}"; do
+#            VER=$(jq -r .version < packages/$P/package.json)
+#            git tag "$P@$VER"
+#          done
+#          git push --tags
+#
+#      - name: GitHub Release
+#        if: steps.detect.outputs.changed != ''
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          tag_name: ${{ github.ref_name }}   # последний созданный тег
+#          generate_release_notes: true
+#
+#  bump:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-tags: true
+#          fetch-depth: 0
+#
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          cache: 'npm'
+#          node-version: 22
+#          registry-url: 'https://registry.npmjs.org/'
+#
+#      - name: Install dependencies
+#        run: npm ci
+#
+#      - name: Create builds
+#        run: npm run build
+#
+#      - name: Configure Git for Lerna
+#        run: |
+#          git config user.name "github-actions[bot]"
+#          git config user.email "github-actions[bot]@users.noreply.github.com"
+#
+#      - name: Bump versions
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#        run: |
+#          npx lerna version --yes --no-push
+#          git push origin HEAD:releases/pr-${{ github.event.pull_request.number }}
+#
+#          for TAG in $(git tag); do
+#            if git ls-remote --tags origin refs/tags/$TAG | grep -q $TAG; then
+#              echo "Tag $TAG already exists on the remote server, skipping"
+#            else
+#              git push origin $TAG
+#              gh release create "$TAG" --generate-notes
+#
+#              echo "Tag $TAG successfully created"
+#            fi
+#          done
+#
+#          npx lerna publish from-git --yes
+#
+#      - name: Create Release Pull Request
+#        id: cpr
+#        uses: peter-evans/create-pull-request@v7
+#        with:
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          commit-message: 'chore(release): bump versions'
+#          title: 'chore(release): bump versions'
+#          body: Automated version bump & changelog
+#          base: main
+#          branch: releases/pr-${{ github.event.pull_request.number }}
+#          labels: automerge
+#          delete-branch: true
+#
+#      - name: Enable auto-merge on Release PR
+#        if: steps.cpr.outputs.pull-request-number != ''
+#        uses: peter-evans/enable-pull-request-automerge@v3
+#        with:
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+#          merge-method: squash
