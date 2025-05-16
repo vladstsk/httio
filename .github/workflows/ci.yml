@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        node: [ 20, 22 ]
+
+        platform:
+          - { name: MacOS,   os: macOS-latest   }
+          - { name: Linux,   os: ubuntu-latest  }
+          - { name: Windows, os: windows-latest }
+
+        include:
+          - os: ubuntu-latest
+            node: 20
+            lint: true
+            coverage: true
+
+    name: Node ${{ matrix.node }} on ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js v${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      - if: ${{ matrix.lint }}
+        run: npm run lint
+
+      - run: npm run build
+
+      - run: npm test
+
+      - name: Upload artifacts
+        if: ${{ success() && matrix.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            ./packages/**/dist
+            ./packages/**/README.md
+            ./packages/**/package.json
+            ./packages/**/coverage/lcov.info
+          overwrite: 'true'
+          retention-days: 1

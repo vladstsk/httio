@@ -43,30 +43,30 @@
 
 ## Why Httio?
 
-| Feature                      | Description                                                                                           |
-|------------------------------|-------------------------------------------------------------------------------------------------------|
-| **TypeScript-first**         | All public types are exported; strict compile-time checks.                                            |
-| **Tiny footprint**           | Ships as ESM + CJS, zero runtime dependencies.                                                        |
-| **Lazy parsing**             | Body is not parsed automatically—_you_ decide when and how.                                           |
-| **One interface everywhere** | Works in browsers, Node 18+, edge functions—no polyfills required.                              |
-| **Extensible**               | Middleware chain for logging, auth, caching, etc.                                                     |
-| **Convenient cloning**       | `extends()` lets you reuse and override base options elegantly.                                       |
-| **Full control**             | Everything from `fetch` is exposed plus syntactic sugar (`params`, `json`, `timeout`).                |
+| Feature                      | Description                                                                            |
+|------------------------------|----------------------------------------------------------------------------------------|
+| **TypeScript-first**         | All public types are exported; strict compile-time checks.                             |
+| **Tiny footprint**           | Ships as ESM + CJS, zero runtime dependencies.                                         |
+| **Lazy parsing**             | Body is not parsed automatically—_you_ decide when and how.                            |
+| **One interface everywhere** | Works in browsers, Node 18+, edge functions—no polyfills required.                     |
+| **Extensible**               | Middleware chain for logging, auth, caching, etc.                                      |
+| **Convenient cloning**       | `extends()` lets you reuse and override base options elegantly.                        |
+| **Full control**             | Everything from `fetch` is exposed plus syntactic sugar (`params`, `json`, `timeout`). |
 
 ---
 
 ## Httio vs. The Rest
 
-| Library          |                       Size<br>(min&nbsp;+&nbsp;gzip)                       | TS&#8209;first | Browser | Node | Native&nbsp;`fetch` | Middleware | Retries |                                                                  Deps                                                                  | Notes                         |
-|------------------|:--------------------------------------------------------------------------:|:--------------:|:-------:|:----:|:-------------------:|:----------:|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------:|-------------------------------|
-| **Httio**        |      ![size](https://img.shields.io/bundlephobia/minzip/httio?label)       |       ✅       |   ✅    |  ✅  |          ✅        |       ✅   |   ✅    |            [![deps](https://badgen.net/bundlephobia/dependency-count/httio?label)](https://bundlephobia.com/package/httio)             | Modern,&nbsp;tiny             |
-| Axios            |      ![size](https://img.shields.io/bundlephobia/minzip/axios?label)       |       ⚠️       |   ✅    |  ✅  |          ❌        |       ⚠️   |   ⚠️    |            [![deps](https://badgen.net/bundlephobia/dependency-count/axios?label)](https://bundlephobia.com/package/axios)             | Heavy                         |
-| isomorphic-fetch | ![size](https://img.shields.io/bundlephobia/minzip/isomorphic-fetch?label) |       ❌       |   ✅    |  ✅  |          ✅        |       ❌   |   ❌    | [![deps](https://badgen.net/bundlephobia/dependency-count/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch)  | Simple&nbsp;shim              |
-| ky               |        ![size](https://img.shields.io/bundlephobia/minzip/ky?label)        |       ✅       |   ✅    |  ✅  |          ✅        |       ⚠️   |   ✅    |               [![deps](https://badgen.net/bundlephobia/dependency-count/ky?label)](https://bundlephobia.com/package/ky)                | Small,&nbsp;fetch&#8209;first |
-| superagent       |    ![size](https://img.shields.io/bundlephobia/minzip/superagent?label)    |       ⚠️       |   ✅    |  ✅  |          ❌        |       ✅   |   ⚠️    |       [![deps](https://badgen.net/bundlephobia/dependency-count/superagent?label)](https://bundlephobia.com/package/superagent)        | Classic                       |
-| request          |     ![size](https://img.shields.io/bundlephobia/minzip/request?label)      |       ❌       |   ❌    |  ✅  |          ❌        |       ❌   |   ❌    |          [![deps](https://badgen.net/bundlephobia/dependency-count/request?label)](https://bundlephobia.com/package/request)           | Deprecated                    |
-| r2               |        ![size](https://img.shields.io/bundlephobia/minzip/r2?label)        |       ⚠️       |   ❌    |  ✅  |          ✅        |       ❌   |   ❌    |               [![deps](https://badgen.net/bundlephobia/dependency-count/r2?label)](https://bundlephobia.com/package/r2)                | Minimal                       |
-| phin             |       ![size](https://img.shields.io/bundlephobia/minzip/phin?label)       |       ⚠️       |   ❌    |  ✅  |          ❌        |       ❌   |   ✅    |             [![deps](https://badgen.net/bundlephobia/dependency-count/phin?label)](https://bundlephobia.com/package/phin)              | Promise&nbsp;client           |
+| Library                |                                                 Size<br>(min&nbsp;+&nbsp;gzip)                                                  | TS&#8209;first | Browser | Node | Native&nbsp;`fetch` | Middleware | Retries |                                                                 Deps                                                                  | Notes                         |
+|------------------------|:-------------------------------------------------------------------------------------------------------------------------------:|:--------------:|:-------:|:----:|:-------------------:|:----------:|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------:|-------------------------------|
+| **Httio**              |            [![size](https://img.shields.io/bundlephobia/minzip/httio?label)](https://bundlephobia.com/package/httio)            |       ✅        |    ✅    |  ✅   |          ✅          |     ✅      |    ✅    |            [![deps](https://badgen.net/bundlephobia/dependency-count/httio?label)](https://bundlephobia.com/package/httio)            | Modern,&nbsp;tiny             |
+| Axios                  |            [![size](https://img.shields.io/bundlephobia/minzip/axios?label)](https://bundlephobia.com/package/axios)            |       ⚠️       |    ✅    |  ✅   |          ❌          |     ⚠️     |   ⚠️    |            [![deps](https://badgen.net/bundlephobia/dependency-count/axios?label)](https://bundlephobia.com/package/axios)            | Heavy                         |
+| isomorphic&#8209;fetch | [![size](https://img.shields.io/bundlephobia/minzip/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch) |       ❌        |    ✅    |  ✅   |          ✅          |     ❌      |    ❌    | [![deps](https://badgen.net/bundlephobia/dependency-count/isomorphic-fetch?label)](https://bundlephobia.com/package/isomorphic-fetch) | Simple&nbsp;shim              |
+| ky                     |               [![size](https://img.shields.io/bundlephobia/minzip/ky?label)](https://bundlephobia.com/package/ky)               |       ✅        |    ✅    |  ✅   |          ✅          |     ⚠️     |    ✅    |               [![deps](https://badgen.net/bundlephobia/dependency-count/ky?label)](https://bundlephobia.com/package/ky)               | Small,&nbsp;fetch&#8209;first |
+| superagent             |       [![size](https://img.shields.io/bundlephobia/minzip/superagent?label)](https://bundlephobia.com/package/superagent)       |       ⚠️       |    ✅    |  ✅   |          ❌          |     ✅      |   ⚠️    |       [![deps](https://badgen.net/bundlephobia/dependency-count/superagent?label)](https://bundlephobia.com/package/superagent)       | Classic                       |
+| request                |          [![size](https://img.shields.io/bundlephobia/minzip/request?label)](https://bundlephobia.com/package/request)          |       ❌        |    ❌    |  ✅   |          ❌          |     ❌      |    ❌    |          [![deps](https://badgen.net/bundlephobia/dependency-count/request?label)](https://bundlephobia.com/package/request)          | Deprecated                    |
+| r2                     |               [![size](https://img.shields.io/bundlephobia/minzip/r2?label)](https://bundlephobia.com/package/r2)               |       ⚠️       |    ❌    |  ✅   |          ✅          |     ❌      |    ❌    |               [![deps](https://badgen.net/bundlephobia/dependency-count/r2?label)](https://bundlephobia.com/package/r2)               | Minimal                       |
+| phin                   |             [![size](https://img.shields.io/bundlephobia/minzip/phin?label)](https://bundlephobia.com/package/phin)             |       ⚠️       |    ❌    |  ✅   |          ❌          |     ❌      |    ✅    |             [![deps](https://badgen.net/bundlephobia/dependency-count/phin?label)](https://bundlephobia.com/package/phin)             | Promise&nbsp;client           |
 
 
 ### Key takeaways
