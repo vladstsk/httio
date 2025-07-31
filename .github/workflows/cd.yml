@@ -1,0 +1,296 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'master'
+      - 'alpha/**'
+      - 'beta/**'
+      - 'canary/**'
+      - 'rc/**'
+
+env:
+  NODE_VERSION: 20
+  ARTIFACT_NAME: packages
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  branch:
+    runs-on: ubuntu-latest
+
+    outputs:
+      tag: ${{ steps.branch.outputs.tag }}
+      packages: ${{ steps.branch.outputs.packages }}
+
+    steps:
+      - id: branch
+        shell: bash
+        run: |
+          set -euo pipefail
+  
+          REF="${GITHUB_REF#refs/heads/}"
+  
+          case "$REF" in
+            alpha/*|beta/*|canary/*|rc/*)           TAG="${REF%%/*}" ;;
+            master|main)                            TAG="latest"     ;;
+            *)  echo "::error ::Unknown branch format: $REF"; exit 1 ;;
+          esac
+  
+          echo "tag=$TAG" >>"$GITHUB_OUTPUT"
+  
+          COMMIT_MSG='${{ github.event.head_commit.message }}'
+  
+          if [[ "$COMMIT_MSG" == chore\(release\):* ]]; then
+            if [[ "$TAG" == "latest" ]]; then
+              PKG_JSON=$(echo "${COMMIT_MSG#chore(release):}"         \
+               | tr ',' '\n'                                          \
+               | sed -E 's/^[[:space:]]+|[[:space:]]+$//g'            \
+               | sed -E 's/^(@?[^@]+)@.*$/\1/'                        \
+               | jq -R -s -c '
+                   split("\n")
+                   | map(select(length>0))
+                   | map((split("/")[-1]))
+                 ')
+            else
+              PKG_JSON="[\""${REF#*/}"\"]"
+            fi
+          else
+            if [[ "$TAG" == "latest" ]]; then
+              PKG_JSON=$(ls -d packages/*/ | cut -d'/' -f2 | jq -R -s -c 'split("\n")[:-1]')
+            else
+              PKG_JSON="[\""${REF#*/}"\"]"
+            fi
+          fi
+  
+          echo "packages=$PKG_JSON" >> "$GITHUB_OUTPUT"
+
+  artifact:
+    runs-on: ubuntu-latest
+
+    outputs:
+      downloaded: ${{ steps.files.outputs.found_artifact }}
+
+    steps:
+      - id: files
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./packages
+          workflow: ci.yml
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./packages
+          overwrite: 'true'
+          retention-days: 1
+
+  version:
+    if: ${{ needs.artifact.outputs.downloaded == 'true' }}
+    needs: [ branch, artifact ]
+    runs-on: ubuntu-latest
+
+    outputs:
+      tags: ${{ steps.bump.outputs.tag }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        package: ${{ fromJSON(needs.branch.outputs.packages) }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./packages
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - id: bump
+        shell: bash
+        run: |
+          PKG_NAME=$(jq -r '.name' packages/${{ matrix.package }}/package.json)
+          OLD_VERSION=$(jq -r '.version' packages/${{ matrix.package }}/package.json)
+
+          echo "🔍 Looking for the last change of package $PKG_NAME"
+          
+          LAST_RELEASE_COMMIT=$(git log --pretty=format:"%H" --grep="^chore(release): $PKG_NAME@$OLD_VERSION" -n 1)
+          
+          if [[ -z "$LAST_RELEASE_COMMIT" ]]; then
+            LAST_RELEASE_COMMIT=$(git rev-list --max-parents=0 HEAD)
+          elif [ "$LAST_RELEASE_COMMIT" = "$(git rev-parse HEAD)" ]; then
+            echo "⏩ No changes found for $PKG_NAME"
+            exit 0
+          fi
+  
+          COMMITS=$(git log --oneline $LAST_RELEASE_COMMIT...HEAD -- packages/${{ matrix.package }})
+          
+          if [[ -z "$COMMITS" ]]; then
+            echo "⏩ No changes found for $PKG_NAME"
+            exit 0
+          fi
+          
+          echo "commits: $COMMITS"
+
+          if [[ "${{ needs.branch.outputs.tag }}" == 'latest' ]]; then
+            BUMP="patch"
+          else
+            BUMP="prepatch"
+          fi
+
+          while IFS= read -r commit; do
+            if [[ "$commit" =~ ^.*feat!:.*|^.*BREAKING.*CHANGE.*|^.*!:.*$ ]]; then
+              BUMP="major"
+              break
+            elif [[ "$commit" =~ ^.*feat:.*$ ]] && [[ "$BUMP" != "major" ]]; then
+              BUMP="minor"
+            fi
+          done <<< "$COMMITS"
+
+          if [[ "$OLD_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[a-zA-Z]+\..*$ ]]; then
+            if [[ "${{ needs.branch.outputs.tag }}" == 'latest' ]]; then
+              BUMP="release"
+            else
+              BUMP="prerelease"
+            fi
+          fi
+
+          NEW_VERSION=$(npx -y semver "$OLD_VERSION" -i "$BUMP" --preid ${{ needs.branch.outputs.tag }})
+          
+          echo "📦 Package versioning: $PKG_NAME@$OLD_VERSION -> $PKG_NAME@$NEW_VERSION (${BUMP})"
+
+          npm version $NEW_VERSION --no-git-tag-version -w $PKG_NAME
+
+          npx -y conventional-changelog-cli -p angular -i packages/${{ matrix.package }}/CHANGELOG.md -s -r 0
+
+          git config user.name "github-actions[bot]" --replace-all
+          git config user.email "github-actions[bot]@users.noreply.github.com" --replace-all
+
+          git add packages/${{ matrix.package }}/package.json packages/${{ matrix.package }}/CHANGELOG.md package-lock.json
+
+          COMMIT="chore(release): $PKG_NAME@$NEW_VERSION"
+          git commit -m "$COMMIT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+
+          git tag "$PKG_NAME@$NEW_VERSION"
+          echo "tag=$PKG_NAME@$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+          BRANCH="release/${{ matrix.package }}/$NEW_VERSION"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          git push origin HEAD:$BRANCH --follow-tags
+
+      - uses: softprops/action-gh-release@v2
+        if: ${{ steps.bump.outputs.tag }}
+        with:
+          name: ${{ steps.bump.outputs.tag }}
+          tag_name: ${{ steps.bump.outputs.tag }}
+          prerelease: ${{ needs.branch.outputs.tag != 'latest' }}
+          generate_release_notes: true
+
+      - id: cpr
+        if: ${{ steps.bump.outputs.tag }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          body: Automated version bump & changelog
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: ${{ steps.bump.outputs.commit }}
+          labels: automerge
+          branch: ${{ steps.bump.outputs.branch }}
+          delete-branch: true
+          commit-message: ${{ steps.bump.outputs.commit }}
+
+      - if: steps.cpr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          merge-method: squash
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+
+  coverage:
+    if: ${{ needs.version.outputs.tags }}
+    needs: [ branch, artifact, version ]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        package: ${{ fromJSON(needs.branch.outputs.packages) }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./packages
+
+      - shell: bash
+        run: |
+          ls packages/${{ matrix.package }}/coverage
+
+    #      - name: Upload ${{ matrix.package }} coverage to Codecov
+    #        uses: codecov/codecov-action@v4
+    #        with:
+    #          name: ${{ matrix.package }}
+    #          token: ${{ secrets.CODECOV_TOKEN }}
+    #          files: packages/${{ matrix.package }}/coverage/lcov.info
+    #          flags: ${{ matrix.package }}:${{ needs.branch.outputs.tag }}
+    #          fail_ci_if_error: true
+
+  publish:
+    if: ${{ needs.version.outputs.tags }}
+    name: publish ${{ matrix.package }}
+    needs: [ branch, artifact, version ]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        package: ${{ fromJSON(needs.branch.outputs.packages) }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./packages
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: "https://registry.npmjs.org"
+
+      - shell: bash
+        run: |
+          ls packages/${{ matrix.package }}
+
+      - shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG_NAME=$(jq -r '.name' packages/${{ matrix.package }}/package.json)
+          PKG_VERSION=$(jq -r '.version' packages/${{ matrix.package }}/package.json)
+          
+          echo "✅ Publish $PKG_NAME@PKG_VERSION - ${{ needs.branch.outputs.tag }}"
+
+#          npm publish --access public -w $PKG_NAME --tag ${{ needs.branch.outputs.tag }}
