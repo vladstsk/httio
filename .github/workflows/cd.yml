@@ -241,18 +241,14 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./packages
 
-      - shell: bash
-        run: |
-          ls packages/${{ matrix.package }}/coverage
-
-    #      - name: Upload ${{ matrix.package }} coverage to Codecov
-    #        uses: codecov/codecov-action@v4
-    #        with:
-    #          name: ${{ matrix.package }}
-    #          token: ${{ secrets.CODECOV_TOKEN }}
-    #          files: packages/${{ matrix.package }}/coverage/lcov.info
-    #          flags: ${{ matrix.package }}:${{ needs.branch.outputs.tag }}
-    #          fail_ci_if_error: true
+      - name: upload ${{ matrix.package }} coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          name: ${{ matrix.package }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/${{ matrix.package }}/coverage/lcov.info
+          flags: ${{ matrix.package }}:${{ needs.branch.outputs.tag }}
+          fail_ci_if_error: true
 
   publish:
     if: ${{ needs.version.outputs.tags }}
@@ -293,4 +289,4 @@ jobs:
           
           echo "✅ Publish $PKG_NAME@PKG_VERSION - ${{ needs.branch.outputs.tag }}"
 
-#          npm publish --access public -w $PKG_NAME --tag ${{ needs.branch.outputs.tag }}
+          npm publish --access public -w $PKG_NAME --tag ${{ needs.branch.outputs.tag }}
